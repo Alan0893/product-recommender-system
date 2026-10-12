@@ -1,4 +1,6 @@
-minio:
-  defaultRegion: #set by make file
-  defaultBucket: #set by make file
-  apiEndpoint: #set by make file dynamically during deployment; do not set here.
+storage:
+  defaultRegion: us-east-1
+  defaultBucket: recommender
+  apiEndpoint: aws-compatible-storage
+  apiPort: "7480"
+  credentialsSecret: aws-compatible-storage-credentials

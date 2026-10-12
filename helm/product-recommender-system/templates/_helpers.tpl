@@ -70,6 +70,23 @@ Create the name of the service account to use
   value: {{ .Values.feast.registry }}.{{ .Release.Namespace }}.svc.cluster.local
 {{- end }}
 
+{{- define "product-recommender-system.objectStorageEnv" -}}
+- name: S3_ENDPOINT_URL
+  value: {{ .Values.objectStorage.endpoint | quote }}
+- name: AWS_DEFAULT_REGION
+  value: {{ .Values.objectStorage.region | quote }}
+- name: AWS_ACCESS_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.objectStorage.credentialsSecret }}
+      key: AWS_ACCESS_KEY_ID
+- name: AWS_SECRET_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.objectStorage.credentialsSecret }}
+      key: AWS_SECRET_ACCESS_KEY
+{{- end }}
+
 {{/*
 Define the pipeline job template that can be reused in both Job and CronJob
 */}}
@@ -119,8 +136,10 @@ spec:
         value: https://ds-pipeline-dspa.{{ .Release.Namespace }}.svc.cluster.local:8888
       - name: DB_SECRET_NAME
         value: pgvector
-      - name: MINIO_SECRET_NAME
-        value: ds-pipeline-s3-dspa
+      - name: S3_SECRET_NAME
+        value: {{ .Values.objectStorage.credentialsSecret }}
+      - name: S3_ENDPOINT_URL
+        value: {{ .Values.objectStorage.endpoint | quote }}
       - name: BASE_REC_SYS_IMAGE
         value: {{ .Values.applicationImage }}
       - name: DATASET_URL

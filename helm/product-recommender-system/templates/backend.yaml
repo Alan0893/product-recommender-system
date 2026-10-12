@@ -101,9 +101,7 @@ spec:
             {{- if .Values.backend.additionalEnv }}
             {{- toYaml .Values.backend.additionalEnv | nindent 12 }}
             {{- end }}
-            {{- if .Values.minio.env }}
-            {{- toYaml .Values.minio.env | nindent 12 }}
-            {{- end }}
+            {{- include "product-recommender-system.objectStorageEnv" . | nindent 12 }}
             {{- include "product-recommender-system.feastEnv" . | nindent 12 }}
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
@@ -256,9 +254,7 @@ spec:
           {{- if .Values.backend.additionalEnv }}
           {{- toYaml .Values.backend.additionalEnv | nindent 12 }}
           {{- end }}
-          {{- if .Values.minio.env }}
-          {{- toYaml .Values.minio.env | nindent 12 }}
-          {{- end }}
+          {{- include "product-recommender-system.objectStorageEnv" . | nindent 12 }}
           {{- include "product-recommender-system.feastEnv" . | nindent 12 }}
         {{- if or .Values.backend.additionalVolumeMounts .Values.feast.secret }}
         volumeMounts:
