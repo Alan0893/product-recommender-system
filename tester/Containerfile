@@ -33,7 +33,7 @@ RUN helm repo add rh-ai-quickstart https://rh-ai-quickstart.github.io/ai-archite
 
 # Create a custom Makefile that skips dependency updates
 RUN cp /app/helm/Makefile /app/helm/Makefile.original && \
-    sed 's/install: check-oc-version check-minio-credentials namespace depend/install: check-oc-version check-minio-credentials namespace/' /app/helm/Makefile.original > /app/helm/Makefile
+    sed 's/install: check-oc-version check-storage-credentials check-model-config namespace depend/install: check-oc-version check-storage-credentials check-model-config namespace/' /app/helm/Makefile.original > /app/helm/Makefile
 
 # Set the default command
 CMD ["/bin/bash", "./check_image_and_run_tests.sh"]
