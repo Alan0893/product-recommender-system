@@ -1,3 +1,7 @@
+{{/*
+The upstream dependency's sampleFileUpload job creates only one bucket. This
+job preserves the two application buckets required by the recommender system.
+*/}}
 {{- $storage := index .Values "aws-compatible-storage" | default dict }}
 {{- $storageName := $storage.fullnameOverride | default "aws-compatible-storage" }}
 {{- $s3 := $storage.s3 | default dict }}
