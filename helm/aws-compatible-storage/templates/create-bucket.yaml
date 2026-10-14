@@ -1,3 +1,9 @@
+{{- $storage := index .Values "aws-compatible-storage" | default dict }}
+{{- $storageName := $storage.fullnameOverride | default "aws-compatible-storage" }}
+{{- $s3 := $storage.s3 | default dict }}
+{{- $service := $storage.service | default dict }}
+{{- $server := $storage.server | default dict }}
+{{- $credentialsSecret := $s3.existingSecret | default (printf "%s-credentials" $storageName) }}
 {{- $existingJob := lookup "batch/v1" "Job" .Release.Namespace "aws-compatible-storage-buckets" }}
 {{- if not $existingJob }}
 apiVersion: batch/v1
@@ -24,17 +30,17 @@ spec:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "aws-compatible-storage.secretName" . }}
+                  name: {{ $credentialsSecret }}
                   key: AWS_ACCESS_KEY_ID
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "aws-compatible-storage.secretName" . }}
+                  name: {{ $credentialsSecret }}
                   key: AWS_SECRET_ACCESS_KEY
             - name: S3_ENDPOINT_URL
-              value: {{ printf "http://%s:%s" (include "aws-compatible-storage.fullname" .) (include "aws-compatible-storage.apiPort" .) | quote }}
+              value: {{ printf "http://%s:%v" $storageName ($service.s3Port | default 7480) | quote }}
             - name: S3_UI_HEALTH_URL
-              value: {{ printf "http://%s:%s/api" (include "aws-compatible-storage.fullname" .) (include "aws-compatible-storage.uiPort" .) | quote }}
+              value: {{ printf "http://%s:%v/api" $storageName ($server.port | default 5000) | quote }}
             - name: AWS_DEFAULT_REGION
               value: us-east-1
             - name: S3_BUCKETS
@@ -70,7 +76,7 @@ spec:
                   except Exception as exc:
                       if attempt == 59:
                           raise
-                      print(f"Waiting for S4 ({attempt + 1}/60): {exc}")
+                      print(f"Waiting for storage ({attempt + 1}/60): {exc}")
                       time.sleep(5)
 
               for bucket in filter(None, os.environ["S3_BUCKETS"].split(",")):
