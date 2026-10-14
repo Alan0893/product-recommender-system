@@ -24,7 +24,7 @@ To install the product recommender system:
 make install NAMESPACE=your-namespace storage.accessKeyId=fred storage.secretAccessKey=pass0123
 ```
 
-The storage.accessKeyId and storage.secretAccessKey configure the S4-compatible storage credentials used by the OpenShift Pipeline Application Server.
+The storage.accessKeyId and storage.secretAccessKey configure the S3-compatible storage credentials used by the OpenShift Pipeline Application Server.
 
 IMPORTANT: The storage.accessKeyId must be at least 3 characters long and the storage.secretAccessKey must be at least 8 characters long.
 
@@ -33,7 +33,7 @@ The install command will:
 1. Create the specified namespace if it doesn't exist
 2. Update Helm dependencies
 3. Install/upgrade the Helm chart with the configured settings
-4. Install S4-compatible object storage, create the recommender buckets, and install the pipeline application server.
+4. Install S3-compatible object storage, create the recommender buckets, and install the pipeline application server.
 5. Wait for the deployment to complete (typically 10-15 minutes depending on the model size)
 
 ### Check Deployment Status

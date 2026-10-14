@@ -2,7 +2,7 @@
 For the AI review summarization feature, we need to deploy an LLM model. In this README, we’ll explain how to do this using OpenShift AI tools.
 Feel free to use your favorite tool to deploy a model on OpenShift.
 
-1. **Use the S4-compatible storage service**
+1. **Use the S3-compatible storage service**
    The Helm deployment creates the `aws-compatible-storage` S3-compatible service and the `user-encoder` bucket.
 
 2. **Download and upload the model to bucket**

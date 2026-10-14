@@ -44,7 +44,7 @@ storage_args = \
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  install       - Install the recommender system and S4 storage"
+	@echo "  install       - Install the recommender system and S3-compatible storage"
 	@echo "  uninstall     - Uninstall the recommender system and supporting resources"
 	@echo "  status        - Check the deployment status"
 	@echo ""
@@ -107,20 +107,20 @@ install: check-oc-version check-storage-credentials check-model-config namespace
 
 .PHONY: storage-install
 storage-install:
-	@echo "Installing S4 storage and creating recommender buckets..."
+	@echo "Installing S3-compatible storage and creating recommender buckets..."
 	@helm -n $(NAMESPACE) upgrade --install $(STORAGE_SERVICE) $(STORAGE_CHART) \
 		$(storage_args) \
 		--timeout 5m
-	@echo "Waiting for S4 storage to become ready in namespace $(NAMESPACE)..."
+	@echo "Waiting for S3-compatible storage to become ready in namespace $(NAMESPACE)..."
 	@oc wait deployment/$(STORAGE_SERVICE) -n $(NAMESPACE) --for=condition=Available --timeout=180s
 	@oc wait job/aws-compatible-storage-buckets -n $(NAMESPACE) --for=condition=complete --timeout=180s
 	@oc wait --for=jsonpath='{.status.ingress[0].conditions[?(@.type=="Admitted")].status}=True' \
 		route/$(STORAGE_SERVICE)-api -n $(NAMESPACE) --timeout=60s
-	@echo "S4 storage installation complete."
+	@echo "S3-compatible storage installation complete."
 
 .PHONY: pipeline-server-install
 pipeline-server-install:
-	@echo "Installing pipeline server with S4 artifact storage..."
+	@echo "Installing pipeline server with S3-compatible artifact storage..."
 	@helm -n $(NAMESPACE) upgrade --install pipeline-server $(PIPELINE_SERVER_CHART) \
 		--set storage.apiEndpoint=$(STORAGE_SERVICE).$(NAMESPACE).svc.cluster.local \
 		--set storage.apiPort=$(STORAGE_API_PORT) \
@@ -165,9 +165,9 @@ product-recommender-uninstall:
 
 .PHONY: storage-uninstall
 storage-uninstall:
-	@echo "Uninstalling S4 storage"
+	@echo "Uninstalling S3-compatible storage"
 	@helm -n $(NAMESPACE) uninstall $(STORAGE_SERVICE) || true
-	@echo "Removing pgvector and S4 PVCs from $(NAMESPACE)"
+	@echo "Removing pgvector and storage PVCs from $(NAMESPACE)"
 	@oc get pvc -n $(NAMESPACE) -o custom-columns=NAME:.metadata.name | grep -E '^(pg|aws-compatible-storage)' | xargs -I {} oc delete pvc -n $(NAMESPACE) {} ||:
 	@$(MAKE) status
 
