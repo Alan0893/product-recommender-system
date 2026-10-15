@@ -21,10 +21,7 @@ aws-compatible-storage:
   storage:
     data:
       size: 100Gi
-
-awsCompatibleStorageBuckets:
-  - recommender
-  - user-encoder
-
-jobImages:
-  python: registry.redhat.io/ubi9/python-311:latest
+  sampleFileUpload:
+    enabled: true
+    bucket: recommender
+    urls: []
