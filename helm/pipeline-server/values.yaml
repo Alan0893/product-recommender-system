@@ -1,6 +1,6 @@
 storage:
-  defaultRegion: us-east-1
-  defaultBucket: recommender
-  apiEndpoint: aws-compatible-storage
-  apiPort: "7480"
-  credentialsSecret: aws-compatible-storage-credentials
+  defaultRegion: # set by Makefile at deployment time
+  defaultBucket: # set by Makefile at deployment time
+  apiEndpoint: # set by Makefile at deployment time
+  apiPort: # set by Makefile at deployment time
+  credentialsSecret: # set by Makefile at deployment time
