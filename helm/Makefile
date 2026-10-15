@@ -35,6 +35,9 @@ model_args = \
 	--set llmModel.ollamaModel=$(MODEL_NAME) \
 	--set llmModel.modelEndpoint=$(MODEL_ENDPOINT)
 
+# NOTE: credentials are passed as make variables on the command line,
+# so they can appear in shell history and process listings. See helm/README.md
+# under "Known Limitations" before using this installation path.
 storage_args = \
 	--set aws-compatible-storage.s3.accessKeyId=$(storage.accessKeyId) \
 	--set aws-compatible-storage.s3.secretAccessKey=$(storage.secretAccessKey) \

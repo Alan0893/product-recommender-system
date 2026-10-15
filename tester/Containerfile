@@ -30,7 +30,16 @@ RUN chmod +x ./check_image_and_run_tests.sh
 RUN helm repo add rh-ai-quickstart https://rh-ai-quickstart.github.io/ai-architecture-charts && \
     helm repo update
 
-# Create a custom Makefile that skips dependency updates
+# Pre-build Helm chart dependencies so charts/ tarballs are present in the image.
+# The dependency tarballs are listed in .gitignore and are never committed, so they
+# must be fetched at image-build time.  Both charts ship a Chart.lock, so
+# `helm dependency build` resolves exact pinned versions without a live network
+# lookup beyond the initial repo-add above.
+RUN helm dependency build /app/helm/product-recommender-system && \
+    helm dependency build /app/helm/aws-compatible-storage
+
+# Create a custom Makefile that skips dependency updates (deps are already
+# baked into the image by the RUN above, so `depend` is not needed at runtime).
 RUN cp /app/helm/Makefile /app/helm/Makefile.original && \
     sed 's/install: check-oc-version check-storage-credentials check-model-config namespace depend/install: check-oc-version check-storage-credentials check-model-config namespace/' /app/helm/Makefile.original > /app/helm/Makefile
 
