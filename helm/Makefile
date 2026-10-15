@@ -18,8 +18,7 @@ STORAGE_API_PORT := 7480
 STORAGE_BUCKET := recommender
 STORAGE_REGION := us-east-1
 STORAGE_SECRET := aws-compatible-storage-credentials
-MINIMUM_ACCESS_KEY_LENGTH = 3
-MINIMUM_SECRET_KEY_LENGTH = 8
+MINIMUM_OC_VERSION = 4.17.0
 MODEL_NAME ?=
 MODEL_ENDPOINT ?=
 
@@ -35,9 +34,6 @@ model_args = \
 	--set llmModel.ollamaModel=$(MODEL_NAME) \
 	--set llmModel.modelEndpoint=$(MODEL_ENDPOINT)
 
-# NOTE: credentials are passed as make variables on the command line,
-# so they can appear in shell history and process listings. See helm/README.md
-# under "Known Limitations" before using this installation path.
 storage_args = \
 	--set aws-compatible-storage.s3.accessKeyId=$(storage.accessKeyId) \
 	--set aws-compatible-storage.s3.secretAccessKey=$(storage.secretAccessKey) \
@@ -62,24 +58,16 @@ help:
 check-oc-version:
 	$(eval USER_OC_VERSION = $(shell oc version --client=true -o json | jq -r .clientVersion.gitVersion))
 	@echo "Detected oc version on your machine: $(USER_OC_VERSION)"
-	@echo "NOTE: This install script has only been tested for oc version 4.17.0 and bash/zsh."
+	@echo "NOTE: This install script has only been tested for oc version $(MINIMUM_OC_VERSION) and bash/zsh."
 
 .PHONY: check-storage-credentials
 check-storage-credentials:
 	@if [ -z "$(storage.accessKeyId)" ]; then \
-		echo "Set storage.accessKeyId to a value that is at least $(MINIMUM_ACCESS_KEY_LENGTH) characters long."; \
-		exit 1; \
-	fi
-	@if [ $$(wc -m <<< $(storage.accessKeyId)) -lt $$(expr $(MINIMUM_ACCESS_KEY_LENGTH) + 1) ]; then \
-		echo "Set storage.accessKeyId to a value that is at least $(MINIMUM_ACCESS_KEY_LENGTH) characters long."; \
+		echo "Set storage.accessKeyId to a non-empty value."; \
 		exit 1; \
 	fi
 	@if [ -z "$(storage.secretAccessKey)" ]; then \
-		echo "Set storage.secretAccessKey to a value that is at least $(MINIMUM_SECRET_KEY_LENGTH) characters long."; \
-		exit 1; \
-	fi
-	@if [ $$(wc -m <<< $(storage.secretAccessKey)) -lt $$(expr $(MINIMUM_SECRET_KEY_LENGTH) + 1) ]; then \
-		echo "Set storage.secretAccessKey to a value that is at least $(MINIMUM_SECRET_KEY_LENGTH) characters long."; \
+		echo "Set storage.secretAccessKey to a non-empty value."; \
 		exit 1; \
 	fi
 
@@ -87,10 +75,12 @@ check-storage-credentials:
 check-model-config:
 	@if [ -z "$(MODEL_NAME)" ]; then \
 		echo "ERROR: MODEL_NAME is required but not set."; \
+		echo "Please provide MODEL_NAME when running make install."; \
 		exit 1; \
 	fi
 	@if [ -z "$(MODEL_ENDPOINT)" ]; then \
 		echo "ERROR: MODEL_ENDPOINT is required but not set."; \
+		echo "Please provide MODEL_ENDPOINT when running make install."; \
 		exit 1; \
 	fi
 
@@ -163,6 +153,7 @@ uninstall: check-oc-version product-recommender-uninstall pipeline-server-uninst
 product-recommender-uninstall:
 	@echo "Uninstalling $(PRODUCT_RECOMMENDER_CHART)"
 	@helm -n $(NAMESPACE) uninstall $(PRODUCT_RECOMMENDER_CHART) || true
+	@echo "Deleting remaining pods in namespace $(NAMESPACE) for $(PRODUCT_RECOMMENDER_CHART)"
 	@oc delete jobs -n $(NAMESPACE) --all --grace-period=60 --ignore-not-found
 	@oc delete pods -n $(NAMESPACE) --all --grace-period=60 --ignore-not-found
 
@@ -172,6 +163,8 @@ storage-uninstall:
 	@helm -n $(NAMESPACE) uninstall $(STORAGE_SERVICE) || true
 	@echo "Removing pgvector and storage PVCs from $(NAMESPACE)"
 	@oc get pvc -n $(NAMESPACE) -o custom-columns=NAME:.metadata.name | grep -E '^(pg|aws-compatible-storage)' | xargs -I {} oc delete pvc -n $(NAMESPACE) {} ||:
+	@echo "Checking for any remaining resources in namespace $(NAMESPACE)..."
+	@echo "Remaining resources in namespace $(NAMESPACE):"
 	@$(MAKE) status
 
 .PHONY: pipeline-server-uninstall
@@ -192,5 +185,7 @@ status:
 	oc get svc -n $(NAMESPACE) || true
 	@echo "Listing routes..."
 	oc get routes -n $(NAMESPACE) || true
+	@echo "Listing secrets..."
+	oc get secrets -n $(NAMESPACE) | grep huggingface-secret || true
 	@echo "Listing PVCs..."
 	oc get pvc -n $(NAMESPACE) || true

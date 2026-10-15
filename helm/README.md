@@ -26,14 +26,14 @@ make install NAMESPACE=your-namespace storage.accessKeyId=fred storage.secretAcc
 
 The storage.accessKeyId and storage.secretAccessKey configure the S3-compatible storage credentials used by the OpenShift Pipeline Application Server.
 
-IMPORTANT: The storage.accessKeyId must be at least 3 characters long and the storage.secretAccessKey must be at least 8 characters long.
+Both `storage.accessKeyId` and `storage.secretAccessKey` must be provided.
 
 The install command will:
 
 1. Create the specified namespace if it doesn't exist
 2. Update Helm dependencies
 3. Install/upgrade the Helm chart with the configured settings
-4. Install S3-compatible object storage, create the recommender buckets, and install the pipeline application server.
+4. Install S3-compatible object storage, create the recommender bucket, and install the pipeline application server.
 5. Wait for the deployment to complete (typically 10-15 minutes depending on the model size)
 
 ### Check Deployment Status
@@ -75,34 +75,3 @@ You can pass additional Helm arguments using the `EXTRA_HELM_ARGS` variable:
 ```bash
 make install NAMESPACE=your-namespace EXTRA_HELM_ARGS="--set key=value"
 ```
-
-## Known Limitations
-
-### Migration from MinIO is not data-preserving
-
-This deployment replaces a MinIO-backed setup with S3-compatible object storage.
-**No automatic data migration is performed.** Objects stored in the previous MinIO
-PVC are not copied to the new S3 backend. If existing data must be preserved, copy
-the objects from MinIO to the new S3 endpoint (for example, with `mc mirror` or
-`rclone`) before deleting the old MinIO PVC or uninstalling the old stack.
-
-### Credentials are visible in shell history and process listings
-
-Storage credentials are passed as `make` variables on the command line:
-
-```bash
-make install ... storage.accessKeyId=<key> storage.secretAccessKey=<secret>
-```
-
-These values can appear in shell history and in `/proc/<pid>/cmdline` while the
-command runs. To reduce exposure, use a secrets manager or another mechanism that
-does not put the credentials directly in the command line, and remove any exposed
-history entry after installation.
-
-### Bucket job is only created once per Helm release
-
-The bucket-creation job is guarded by a lookup, so Helm upgrades do not rerun it
-while the existing Job resource is present. If a bucket is deleted or the bucket
-list changes after the job has completed, run the job again deliberately—for
-example, delete the Job and run `helm upgrade` / `make install`. If the Job itself
-is deleted, the next Helm upgrade will render it again automatically.
